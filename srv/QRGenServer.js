@@ -7,7 +7,6 @@ const keys = require('./schemas/key')
 const residents = require('./schemas/resident')
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
-const { Console } = require('console');
 const db = mongoose.connection
 const app = express()
 const port = 8080
@@ -39,6 +38,8 @@ const getGuidStatus = router.get('/getGuidStatus', (req, res, next) => {
         res.status(406).send({message: "Inexistent"}).end()
       }
       else if(new Date() > docs.expirationDate) {
+        console.log(new Date())
+        console.log(docs)
         res.status(410).send({message: "Expired"}).end()
       }
       else {
@@ -53,15 +54,16 @@ const getGuidStatus = router.get('/getGuidStatus', (req, res, next) => {
   }
 })
 
-//Param: creator=Creator Name
+//Param: id=CreatorId
 const getUserGuids = router.get('/getUserGuids', (req, res, next) => {
   try {
-    if(req.query.creator == undefined) {
+    if(req.query.id == undefined) {
       throw new Error("NotResident")
     }
     let now = new Date();
-    keys.find({creator: req.query.creator, expirationDate: {$gt: now}}, function (err, docs) { 
+    keys.find({creator: req.query.id, expirationDate: {$gt: now}}, function (err, docs) { 
       console.log(docs)
+      res.status(200).send(docs).end()
     });
   }
   catch (ex) {
@@ -71,16 +73,41 @@ const getUserGuids = router.get('/getUserGuids', (req, res, next) => {
   }
 })
 
+//Param: name=userName
+const getUserId = router.get('/getUserId', (req, res, next) => {
+  console.log(req.query.name)
+  try {
+    if(req.query.name == undefined) {
+      throw new Error("NotResident")
+    }
+    residents.find({name: "Enzo Bustamante Junco Mendonça"}, function (err, docs) { 
+      console.log("84")
+      if(err) {
+        console.log(err)
+        throw new Error("NotResident")
+      }
+      console.log(docs)
+      res.status(200).send(docs[0]._id).end()
+    });
+  }
+  catch (ex) {
+    return res.status(400).send({
+      message: ex.message
+   }.end());
+  }
+})
 
-//Param: creator="Creator Name", days=(int)daysDurationOffset, hours=(int)hoursDurationOffset, minutes=(int)minutesDurationOffset
+
+//Param: id="CreatorId", days=(int)daysDurationOffset, hours=(int)hoursDurationOffset, minutes=(int)minutesDurationOffset
 const newGuid = router.post('/newGuid', (req, res, next) => {
+  console.log(req.body.creator)
   if(req.body.creator == undefined) {
     return res.status(400).send({
       message: "CreatorEmpty"
    });
   }
   
-  residents.exists({ name: req.body.creator }, function(err, result) {
+  residents.exists({ _id: req.body.creator }, function(err, result) {
     if (err || !result) {
       return res.status(403).send({
         message: "NotResident"
@@ -104,7 +131,7 @@ const newResident = router.post('/newResident', (req, res, next) => {
   if(req.body.creator == undefined || req.body.name == undefined) {
     return res.status(400).send({
       message: "RequiredFieldEmpty"
-   });
+   }).end();
   }
   //ToDo: Verify if creator is building administrator
   else {
@@ -151,5 +178,5 @@ function setupApp() {
     app.use(cors())
 }
 
-app.use('/', [qrFromGuid, newGuid, newResident, getUserGuids])
+app.use('/', [qrFromGuid, newGuid, newResident, getUserGuids, getUserId])
 server.listen(port)
