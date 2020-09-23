@@ -20,7 +20,7 @@ const router = express.Router()
 //Param: guid=3539eace-2c52-473c-afef-7122cba349a2
 const qrFromGuid = router.get('/getQRFromGuid', (req, res, next) => {
   try {
-    var qr_svg = qr.imageSync(req.query.guid, { type: 'png' });
+    var qr_svg = qr.imageSync(req.query.guid.toString(), { type: 'png' });
     var qr_str = qr_svg.toString('base64');
     return res.status(200).send({
       image: qr_str
@@ -122,7 +122,7 @@ const newGuid = router.post('/newGuid', (req, res, next) => {
       var date = expirationDate(req.body.daysDurationOffset, req.body.hoursDurationOffset, req.body.minutesDurationOffset)
       let key = new keys({"key": guid, "expirationDate": date, "creator": req.body.creator})
       key.save()
-      var qr_svg = qr.imageSync(req.query.guid, { type: 'png' });
+      var qr_svg = qr.imageSync(guid.toString(), { type: 'png' });
       var qr_str = qr_svg.toString('base64');
       return res.status(200).send({
         image: qr_str
@@ -159,9 +159,12 @@ const deleteGuid = router.delete('/deleteGuid', (req, res) => {
   else {
     key.findOneAndDelete({creator: req.query.creator, key: req.query.guid}, function (err, docs) { 
       if(docs != undefined)
-        res.status(200).send({id: docs[0]._id}).end()
-      else
-        res.status(400).send("Inexistent").end()
+      try {
+        return res.status(200).send({id: docs[0]._id}).end()
+      }
+      catch(ex) {
+        return res.status(400).send("Inexistent").end()
+      }
     });
   }
 })
