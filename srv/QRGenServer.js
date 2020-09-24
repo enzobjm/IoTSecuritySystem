@@ -66,7 +66,7 @@ const getUserGuids = router.get('/getUserGuids', (req, res, next) => {
     let now = new Date()
     console.log(now)
     keys.find({creator: req.query.id, expirationDate: {$gt: now}}, function (err, docs) { 
-      res.status(200).send({list: docs}).end()
+      res.status(200).send({UserGuid: docs}).end()
     });
   }
   catch (ex) {
