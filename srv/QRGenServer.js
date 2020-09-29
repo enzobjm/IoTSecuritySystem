@@ -23,7 +23,8 @@ const qrFromGuid = router.get('/getQRFromGuid', (req, res, next) => {
     var qr_svg = qr.imageSync(req.query.guid.toString(), { type: 'png' });
     var qr_str = qr_svg.toString('base64');
     return res.status(200).send({
-      image: qr_str
+      image: qr_str,
+      guid: req.query.guid.toString()
     })
   }
   catch (ex) {
@@ -66,7 +67,7 @@ const getUserGuids = router.get('/getUserGuids', (req, res, next) => {
     let now = new Date()
     console.log(now)
     keys.find({creator: req.query.id, expirationDate: {$gt: now}}, function (err, docs) { 
-      res.status(200).send({UserGuid: docs}).end()
+      res.status(200).send({list: docs}).end()
     });
   }
   catch (ex) {
@@ -125,7 +126,8 @@ const newGuid = router.post('/newGuid', (req, res, next) => {
       var qr_svg = qr.imageSync(guid.toString(), { type: 'png' });
       var qr_str = qr_svg.toString('base64');
       return res.status(200).send({
-        image: qr_str
+        image: qr_str,
+        guid: guid
       })
     }
   });
@@ -158,7 +160,6 @@ const deleteGuid = router.delete('/deleteGuid', (req, res) => {
   }
   else {
     key.findOneAndDelete({creator: req.query.creator, key: req.query.guid}, function (err, docs) { 
-      if(docs != undefined)
       try {
         return res.status(200).send({id: docs[0]._id}).end()
       }
